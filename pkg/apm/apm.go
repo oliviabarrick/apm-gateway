@@ -2,11 +2,11 @@ package apm
 
 import (
 	"bytes"
-	"log"
-	"net/url"
-	"net/http"
-	"go.elastic.co/fastjson"
 	apm "go.elastic.co/apm/model"
+	"go.elastic.co/fastjson"
+	"log"
+	"net/http"
+	"net/url"
 )
 
 const (
@@ -21,7 +21,7 @@ func SendToAPM(transaction *apm.Transaction) error {
 	fastjson.Marshal(&metadata, &apm.Service{
 		Name: "apm-gateway",
 		Agent: &apm.Agent{
-			Name: "apm-gateway",
+			Name:    "apm-gateway",
 			Version: "0.0.1",
 		},
 	})
@@ -41,12 +41,12 @@ func SendToAPM(transaction *apm.Transaction) error {
 
 func UrlToAPM(requestUrl url.URL) apm.URL {
 	return apm.URL{
-		Full: requestUrl.String(),
+		Full:     requestUrl.String(),
 		Protocol: requestUrl.Scheme,
 		Hostname: requestUrl.Hostname(),
-		Port: requestUrl.Port(),
-		Path: requestUrl.Path,
-		Search: requestUrl.RawQuery,
-		Hash: requestUrl.Fragment,
+		Port:     requestUrl.Port(),
+		Path:     requestUrl.Path,
+		Search:   requestUrl.RawQuery,
+		Hash:     requestUrl.Fragment,
 	}
 }

@@ -1,21 +1,21 @@
 package zipkin
 
 import (
-	"net"
-	"net/url"
-	apmmodel "go.elastic.co/apm/model"
-	zipkinmodel "github.com/openzipkin/zipkin-go/model"
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
 	openzipkin "github.com/openzipkin/zipkin-go"
+	zipkinmodel "github.com/openzipkin/zipkin-go/model"
 	"github.com/openzipkin/zipkin-go/reporter"
 	reporterHttp "github.com/openzipkin/zipkin-go/reporter/http"
+	"github.com/stretchr/testify/assert"
+	apmmodel "go.elastic.co/apm/model"
 	"go.opencensus.io/exporter/zipkin"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/trace"
-	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync"
 	"testing"
 )
@@ -75,12 +75,12 @@ func TestZipkin(t *testing.T) {
 			assert.Equal(t, span.Name, apm.Name)
 			assert.Equal(t, apm.Type, string(span.Kind))
 			assert.Equal(t, apm.Timestamp, apmmodel.Time(span.Timestamp))
-			assert.Equal(t, apm.Duration, float64(span.Duration.Nanoseconds() / 1000000.0))
+			assert.Equal(t, apm.Duration, float64(span.Duration.Nanoseconds()/1000000.0))
 			assert.Equal(t, apm.Result, "200")
 			assert.Equal(t, apm.Context.Request.URL, apmutil.UrlToAPM(urlToURL(span.Tags)))
 			assert.Equal(t, apm.Context.Request.Method, "GET")
 			assert.Equal(t, apm.Context.Request.Headers[0], apmmodel.Header{
-				Key: "User-Agent",
+				Key:    "User-Agent",
 				Values: []string{span.Tags["http.user_agent"]},
 			})
 			assert.Equal(t, apm.Context.Request.Socket, clientToAPM(span.RemoteEndpoint))
@@ -123,7 +123,7 @@ func TestZipkinParentToAPM(t *testing.T) {
 func TestZipkinTraceIDToAPM(t *testing.T) {
 	assert.Equal(t, traceIdToAPM(zipkinmodel.TraceID{
 		High: 0x1234567890123456,
-		Low: 0x3456028234520945,
+		Low:  0x3456028234520945,
 	}), apmmodel.TraceID([16]byte{
 		0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56,
 		0x34, 0x56, 0x02, 0x82, 0x34, 0x52, 0x09, 0x45,
@@ -132,15 +132,15 @@ func TestZipkinTraceIDToAPM(t *testing.T) {
 
 func TestZipkinTagsToAPM(t *testing.T) {
 	assert.ElementsMatch(t, tagsToAPM(map[string]string{
-		"hello": "world",
+		"hello":       "world",
 		"http.status": "200",
 	}), apmmodel.StringMap{
 		apmmodel.StringMapItem{
-			Key: "hello",
+			Key:   "hello",
 			Value: "world",
 		},
 		apmmodel.StringMapItem{
-			Key: "http_status",
+			Key:   "http_status",
 			Value: "200",
 		},
 	})

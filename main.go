@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/justinbarrick/apm-gateway/pkg/importers/zipkin"
 	"log"
 	"net/http"
-	"github.com/justinbarrick/apm-gateway/pkg/importers/zipkin"
 )
 
 func main() {

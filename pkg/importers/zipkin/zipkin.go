@@ -1,18 +1,18 @@
 package zipkin
 
 import (
-	"io"
-	"strconv"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/url"
-	"net/http"
-	"strings"
-	apm "go.elastic.co/apm/model"
-	zipkin "github.com/openzipkin/zipkin-go/model"
 	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
+	zipkin "github.com/openzipkin/zipkin-go/model"
+	apm "go.elastic.co/apm/model"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 )
 
 func idToAPM(zipkinID zipkin.ID) apm.SpanID {
@@ -29,7 +29,7 @@ func parentToAPM(zipkinParent *zipkin.ID) (parentId apm.SpanID) {
 	if zipkinParent != nil {
 		parentId = idToAPM(*zipkinParent)
 	}
-	return 
+	return
 }
 
 func traceIdToAPM(zipkinTraceID zipkin.TraceID) apm.TraceID {
@@ -48,7 +48,7 @@ func traceIdToAPM(zipkinTraceID zipkin.TraceID) apm.TraceID {
 func tagsToAPM(zipkinTags map[string]string) (tags apm.StringMap) {
 	for key, value := range zipkinTags {
 		tags = append(tags, apm.StringMapItem{
-			Key: strings.Replace(key, ".", "_", -1),
+			Key:   strings.Replace(key, ".", "_", -1),
 			Value: value,
 		})
 	}
@@ -88,8 +88,8 @@ func serviceToAPM(zipkinEndpoint *zipkin.Endpoint) *apm.Service {
 func urlToURL(zipkinTags map[string]string) url.URL {
 	return url.URL{
 		Scheme: "http",
-		Host: zipkinTags["http.host"],
-		Path: zipkinTags["http.path"],
+		Host:   zipkinTags["http.host"],
+		Path:   zipkinTags["http.path"],
 	}
 }
 
@@ -97,21 +97,21 @@ func toAPM(zipkinSpan zipkin.SpanModel) *apm.Transaction {
 	statusCode, _ := strconv.Atoi(zipkinSpan.Tags["http.status_code"])
 
 	return &apm.Transaction{
-		ID: idToAPM(zipkinSpan.SpanContext.ID),
-		TraceID: traceIdToAPM(zipkinSpan.SpanContext.TraceID),
-		ParentID: parentToAPM(zipkinSpan.SpanContext.ParentID),
-		Name: zipkinSpan.Name,
-		Type: string(zipkinSpan.Kind),
+		ID:        idToAPM(zipkinSpan.SpanContext.ID),
+		TraceID:   traceIdToAPM(zipkinSpan.SpanContext.TraceID),
+		ParentID:  parentToAPM(zipkinSpan.SpanContext.ParentID),
+		Name:      zipkinSpan.Name,
+		Type:      string(zipkinSpan.Kind),
 		Timestamp: apm.Time(zipkinSpan.Timestamp),
-		Duration: float64(zipkinSpan.Duration.Nanoseconds() / 1000000.0),
-		Result: zipkinSpan.Tags["http.status_code"],
+		Duration:  float64(zipkinSpan.Duration.Nanoseconds() / 1000000.0),
+		Result:    zipkinSpan.Tags["http.status_code"],
 		Context: &apm.Context{
 			Request: &apm.Request{
-				URL: apmutil.UrlToAPM(urlToURL(zipkinSpan.Tags)),
+				URL:    apmutil.UrlToAPM(urlToURL(zipkinSpan.Tags)),
 				Method: zipkinSpan.Tags["http.method"],
 				Headers: []apm.Header{
-					apm.Header{
-						Key: "User-Agent",
+					{
+						Key:    "User-Agent",
 						Values: []string{zipkinSpan.Tags["http.user_agent"]},
 					},
 				},
