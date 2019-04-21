@@ -4,7 +4,7 @@
 	@cat /tmp/CHANGELOG CHANGELOG > /tmp/NEW_CHANGELOG || :
 	@mv /tmp/NEW_CHANGELOG CHANGELOG
 
-	@sed -i 's#image: justinbarrick/apm-gateway:.*#image: justinbarrick/apm-gateway:$(shell git semver --dryrun $*)#g' deploy/kubernetes.yaml
+	@sed -i 's#image: justinbarrick/apm-gateway:.*#image: justinbarrick/apm-gateway:$(shell git semver --dryrun $*)#g' deploy/apm-gateway.yaml
 	@sed -i 's#`justinbarrick/apm-gateway:.*`$$#`justinbarrick/apm-gateway:$(shell git semver --dryrun $*)`#g' README.md
 
 	@git add README.md CHANGELOG deploy/kubernetes.yaml

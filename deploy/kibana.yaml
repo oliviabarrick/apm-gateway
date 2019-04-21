@@ -1,0 +1,88 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: apm-gateway
+  labels:
+    app: kibana
+spec:
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - image: kibana:7.0.0
+        imagePullPolicy: IfNotPresent
+        name: kibana
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: http://elasticsearch:9200
+        - name: SERVER_NAME
+          value: kibana.example.org
+        ports:
+        - containerPort: 5601
+#        livenessProbe:
+#          httpGet:
+#            path: /api/status
+#            port: 5601
+#        readinessProbe:
+#          httpGet:
+#            path: /api/status
+#            port: 5601
+#          initialDelaySeconds: 5
+#          periodSeconds: 10
+        resources:
+          limits:
+            memory: "1024Mi"
+            cpu: "500m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: apm-gateway
+spec:
+  ports:
+  - port: 5601
+    protocol: TCP
+    targetPort: 5601
+  selector:
+    app: kibana
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kibana
+  namespace: apm-gateway
+  labels:
+    app: kibana
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    certmanager.k8s.io/cluster-issuer: letsencrypt
+    external-dns.alpha.kubernetes.io/target: kubernetes.codesink.io.
+    nginx.ingress.kubernetes.io/auth-signin: https://auth.codesink.io/oauth2/start?rd=https://$host$request_uri
+    nginx.ingress.kubernetes.io/auth-url: https://auth.codesink.io/oauth2/auth
+spec:
+  rules:
+  - host: kibana.codesink.io
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kibana
+          servicePort: 5601
+  tls:
+  - hosts:
+    - kibana.codesink.io
+    secretName: kibana-cert

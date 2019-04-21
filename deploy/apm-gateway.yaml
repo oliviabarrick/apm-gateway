@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apm-gateway
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: apm-gateway
+  namespace: apm-gateway
+  labels:
+    app: apm-gateway
+spec:
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  selector:
+    matchLabels:
+      app: apm-gateway
+  template:
+    metadata:
+      labels:
+        app: apm-gateway
+    spec:
+      containers:
+      - image: justinbarrick/apm-gateway:dev
+        imagePullPolicy: Always
+        name: apm-gateway
+        env:
+        - name: APM_ENDPOINT
+          value: http://apm-server:8200/intake/v2/events
+        ports:
+        - containerPort: 8080
+        - containerPort: 9411
+        - containerPort: 14268
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "50m"
+          requests:
+            memory: "128Mi"
+            cpu: "25m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apm-gateway
+  namespace: apm-gateway
+spec:
+  ports:
+  - name: jaeger
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    app: apm-gateway
+  type: ClusterIP

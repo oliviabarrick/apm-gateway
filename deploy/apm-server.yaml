@@ -1,0 +1,61 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: apm-server
+  namespace: apm-gateway
+  labels:
+    app: apm-server
+spec:
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  selector:
+    matchLabels:
+      app: apm-server
+  template:
+    metadata:
+      labels:
+        app: apm-server
+    spec:
+      containers:
+      - image: docker.elastic.co/apm/apm-server:7.0.0
+        imagePullPolicy: IfNotPresent
+        name: apm-server
+        args:
+        - --strict.perms=false
+        - -e
+        - -E
+        - output.elasticsearch.hosts=["elasticsearch:9200"]
+        ports:
+        - containerPort: 8200
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8200
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8200
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "50m"
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apm-server
+  namespace: apm-gateway
+spec:
+  ports:
+  - port: 8200
+    protocol: TCP
+    targetPort: 8200
+  selector:
+    app: apm-server
+  type: ClusterIP

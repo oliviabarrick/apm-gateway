@@ -63,7 +63,10 @@ func (e *Exporter) SendToAPM(transaction *apm.Transaction) error {
 
 	resp, err := e.client.Post(e.Url, "application/x-ndjson", buf)
 
-	service := transaction.Context.Service.Name
+	service := ""
+	if transaction.Context.Service != nil {
+		service = transaction.Context.Service.Name
+	}
 	exportSeconds.WithLabelValues(service, resp.Status).Observe(float64(time.Now().Sub(startTime).Nanoseconds()))
 
 	if err != nil {

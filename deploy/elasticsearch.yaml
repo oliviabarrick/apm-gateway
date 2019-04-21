@@ -1,0 +1,67 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: apm-gateway
+  labels:
+    app: elasticsearch
+spec:
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - image: elasticsearch:7.0.0
+        imagePullPolicy: IfNotPresent
+        name: elasticsearch
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: -Xms512m -Xmx512m
+        ports:
+        - containerPort: 9200
+        - containerPort: 9300
+#        livenessProbe:
+#          httpGet:
+#            path: /
+#            port: 9200
+#        readinessProbe:
+#          httpGet:
+#            path: /
+#            port: 9200
+#          initialDelaySeconds: 5
+#          periodSeconds: 10
+        resources:
+          limits:
+            memory: "1025Mi"
+            cpu: "200m"
+          requests:
+            memory: "512Mi"
+            cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: apm-gateway
+spec:
+  ports:
+  - name: http
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  - name: https
+    port: 9300
+    protocol: TCP
+    targetPort: 9300
+  selector:
+    app: elasticsearch
+  type: ClusterIP
