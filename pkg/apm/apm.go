@@ -1,18 +1,10 @@
 package apm
 
 import (
-	"bytes"
 	"encoding/binary"
 	apm "go.elastic.co/apm/model"
-	"go.elastic.co/fastjson"
-	"log"
-	"net/http"
 	"net/url"
 	"strings"
-)
-
-const (
-	apmUrl = "http://172.17.0.5:8200/intake/v2/events"
 )
 
 func TagsToAPM(inputTags map[string]string) (tags apm.StringMap) {
@@ -48,32 +40,6 @@ func TraceId(high uint64, low uint64) apm.TraceID {
 
 func SpanId(num uint64) apm.SpanID {
 	return apm.SpanID(IntToBytes(num))
-}
-
-func SendToAPM(transaction *apm.Transaction) error {
-	var transactionEncoded fastjson.Writer
-	fastjson.Marshal(&transactionEncoded, transaction)
-
-	var metadata fastjson.Writer
-	fastjson.Marshal(&metadata, &apm.Service{
-		Name: "apm-gateway",
-		Agent: &apm.Agent{
-			Name:    "apm-gateway",
-			Version: "0.0.1",
-		},
-	})
-
-	buf := &bytes.Buffer{}
-	buf.Write([]byte("{\"metadata\":{\"service\":"))
-	buf.Write(metadata.Bytes())
-	buf.Write([]byte("}}\n{\"transaction\":"))
-	buf.Write(transactionEncoded.Bytes())
-	buf.Write([]byte("}\n"))
-
-	log.Println(string(buf.Bytes()))
-
-	_, err := http.Post(apmUrl, "application/x-ndjson", buf)
-	return err
 }
 
 func UrlToAPM(requestUrl url.URL) apm.URL {

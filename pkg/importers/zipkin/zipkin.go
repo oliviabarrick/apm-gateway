@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
+	"github.com/justinbarrick/apm-gateway/pkg/exporters"
 	zipkin "github.com/openzipkin/zipkin-go/model"
 	apm "go.elastic.co/apm/model"
 	"io"
@@ -99,14 +100,22 @@ func decodeZipkin(body io.Reader) (spans []zipkin.SpanModel, err error) {
 	return spans, json.NewDecoder(body).Decode(&spans)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+type Importer struct {
+	exporter exporter.Exporter
+}
+
+func (i *Importer) SetExporter(e exporter.Exporter) {
+	i.exporter = e
+}
+
+func (i *Importer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	spans, err := decodeZipkin(r.Body)
 	if err != nil {
 		log.Println(err)
 	}
 
 	for _, span := range spans {
-		if err := apmutil.SendToAPM(toAPM(span)); err != nil {
+		if err := i.exporter.SendToAPM(toAPM(span)); err != nil {
 			log.Println(err)
 		}
 	}
