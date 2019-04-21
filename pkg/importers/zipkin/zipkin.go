@@ -1,7 +1,6 @@
 package zipkin
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
@@ -10,19 +9,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 )
 
 func idToAPM(zipkinID zipkin.ID) apm.SpanID {
-	zipkinByteSlice := make([]byte, 8)
-	zipkinBytes := [8]byte{}
-
-	binary.BigEndian.PutUint64(zipkinByteSlice, uint64(zipkinID))
-	copy(zipkinBytes[:], zipkinByteSlice)
-
-	return apm.SpanID(zipkinBytes)
+	return apmutil.SpanId(uint64(zipkinID))
 }
 
 func parentToAPM(zipkinParent *zipkin.ID) (parentId apm.SpanID) {
@@ -33,26 +24,7 @@ func parentToAPM(zipkinParent *zipkin.ID) (parentId apm.SpanID) {
 }
 
 func traceIdToAPM(zipkinTraceID zipkin.TraceID) apm.TraceID {
-	zipkinByteSlice := make([]byte, 8)
-	zipkinBytes := [16]byte{}
-
-	binary.BigEndian.PutUint64(zipkinByteSlice, uint64(zipkinTraceID.High))
-	copy(zipkinBytes[:8], zipkinByteSlice)
-
-	binary.BigEndian.PutUint64(zipkinByteSlice, uint64(zipkinTraceID.Low))
-	copy(zipkinBytes[8:], zipkinByteSlice)
-
-	return apm.TraceID(zipkinBytes)
-}
-
-func tagsToAPM(zipkinTags map[string]string) (tags apm.StringMap) {
-	for key, value := range zipkinTags {
-		tags = append(tags, apm.StringMapItem{
-			Key:   strings.Replace(key, ".", "_", -1),
-			Value: value,
-		})
-	}
-	return
+	return apmutil.TraceId(zipkinTraceID.High, zipkinTraceID.Low)
 }
 
 func clientToAPM(zipkinEndpoint *zipkin.Endpoint) *apm.RequestSocket {
@@ -85,14 +57,6 @@ func serviceToAPM(zipkinEndpoint *zipkin.Endpoint) *apm.Service {
 	}
 }
 
-func urlToURL(zipkinTags map[string]string) url.URL {
-	return url.URL{
-		Scheme: "http",
-		Host:   zipkinTags["http.host"],
-		Path:   zipkinTags["http.path"],
-	}
-}
-
 func toAPM(zipkinSpan zipkin.SpanModel) *apm.Transaction {
 	statusCode, _ := strconv.Atoi(zipkinSpan.Tags["http.status_code"])
 
@@ -107,7 +71,7 @@ func toAPM(zipkinSpan zipkin.SpanModel) *apm.Transaction {
 		Result:    zipkinSpan.Tags["http.status_code"],
 		Context: &apm.Context{
 			Request: &apm.Request{
-				URL:    apmutil.UrlToAPM(urlToURL(zipkinSpan.Tags)),
+				URL:    apmutil.TagsToURL(zipkinSpan.Tags),
 				Method: zipkinSpan.Tags["http.method"],
 				Headers: []apm.Header{
 					{
@@ -121,7 +85,7 @@ func toAPM(zipkinSpan zipkin.SpanModel) *apm.Transaction {
 			Response: &apm.Response{
 				StatusCode: statusCode,
 			},
-			Tags: tagsToAPM(zipkinSpan.Tags),
+			Tags: apmutil.TagsToAPM(zipkinSpan.Tags),
 		},
 		Sampled: zipkinSpan.SpanContext.Sampled,
 		SpanCount: apm.SpanCount{

@@ -15,7 +15,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"sync"
 	"testing"
 )
@@ -77,7 +76,7 @@ func TestZipkin(t *testing.T) {
 			assert.Equal(t, apm.Timestamp, apmmodel.Time(span.Timestamp))
 			assert.Equal(t, apm.Duration, float64(span.Duration.Nanoseconds()/1000000.0))
 			assert.Equal(t, apm.Result, "200")
-			assert.Equal(t, apm.Context.Request.URL, apmutil.UrlToAPM(urlToURL(span.Tags)))
+			assert.Equal(t, apm.Context.Request.URL, apmutil.TagsToURL(span.Tags))
 			assert.Equal(t, apm.Context.Request.Method, "GET")
 			assert.Equal(t, apm.Context.Request.Headers[0], apmmodel.Header{
 				Key:    "User-Agent",
@@ -86,7 +85,7 @@ func TestZipkin(t *testing.T) {
 			assert.Equal(t, apm.Context.Request.Socket, clientToAPM(span.RemoteEndpoint))
 			assert.Equal(t, apm.Context.Service, serviceToAPM(span.LocalEndpoint))
 			assert.Equal(t, apm.Context.Response.StatusCode, 200)
-			assert.ElementsMatch(t, apm.Context.Tags, tagsToAPM(span.Tags))
+			assert.ElementsMatch(t, apm.Context.Tags, apmutil.TagsToAPM(span.Tags))
 			assert.Equal(t, apm.Sampled, span.SpanContext.Sampled)
 			assert.Equal(t, apm.SpanCount, apmmodel.SpanCount{})
 		}
@@ -130,22 +129,6 @@ func TestZipkinTraceIDToAPM(t *testing.T) {
 	}))
 }
 
-func TestZipkinTagsToAPM(t *testing.T) {
-	assert.ElementsMatch(t, tagsToAPM(map[string]string{
-		"hello":       "world",
-		"http.status": "200",
-	}), apmmodel.StringMap{
-		apmmodel.StringMapItem{
-			Key:   "hello",
-			Value: "world",
-		},
-		apmmodel.StringMapItem{
-			Key:   "http_status",
-			Value: "200",
-		},
-	})
-}
-
 func TestZipkinClientToAPM(t *testing.T) {
 	assert.Nil(t, clientToAPM(nil))
 
@@ -178,12 +161,4 @@ func TestZipkinServiceToAPM(t *testing.T) {
 	}), &apmmodel.Service{
 		Name: "hello",
 	})
-}
-
-func TestZipkinUrlToURL(t *testing.T) {
-	parsed, _ := url.Parse("http://google.com:8080/hello")
-	assert.Equal(t, urlToURL(map[string]string{
-		"http.host": "google.com:8080",
-		"http.path": "/hello",
-	}), *parsed)
 }
