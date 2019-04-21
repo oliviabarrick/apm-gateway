@@ -23,7 +23,7 @@ spec:
         app: apm-gateway
     spec:
       containers:
-      - image: justinbarrick/apm-gateway:dev
+      - image: justinbarrick/apm-gateway:0.1.0
         imagePullPolicy: Always
         name: apm-gateway
         env:
