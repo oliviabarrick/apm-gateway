@@ -7,6 +7,6 @@
 	@sed -i 's#image: justinbarrick/apm-gateway:.*#image: justinbarrick/apm-gateway:$(shell git semver --dryrun $*)#g' deploy/apm-gateway.yaml
 	@sed -i 's#`justinbarrick/apm-gateway:.*`$$#`justinbarrick/apm-gateway:$(shell git semver --dryrun $*)`#g' README.md
 
-	@git add README.md CHANGELOG deploy/kubernetes.yaml
+	@git add README.md CHANGELOG deploy/apm-gateway.yaml
 	@git commit -m "Release $(shell git semver --dryrun $*)"
 	@git semver $*
