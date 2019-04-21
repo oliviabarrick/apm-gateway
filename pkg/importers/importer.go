@@ -1,7 +1,8 @@
-package importers
+package importer
 
 import (
 	"github.com/justinbarrick/apm-gateway/pkg/exporters"
+	"log"
 	"net/http"
 )
 
@@ -10,7 +11,10 @@ type Importer interface {
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
-func WithExporter(i Importer, e exporter.Exporter) Importer {
+func Serve(port string, i Importer, e exporter.Exporter) {
 	i.SetExporter(e)
-	return i
+
+	go func() {
+		log.Fatal(http.ListenAndServe(port, i))
+	}()
 }

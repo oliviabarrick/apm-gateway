@@ -38,7 +38,17 @@ func tagsToMap(jaegerTags []*jaeger.Tag) map[string]string {
 	return tags
 }
 
-func toAPM(span *jaeger.Span) *apm.Transaction {
+func serviceToAPM(proc *jaeger.Process) *apm.Service {
+	if proc == nil {
+		return nil
+	}
+
+	return &apm.Service{
+		Name: proc.ServiceName,
+	}
+}
+
+func toAPM(proc *jaeger.Process, span *jaeger.Span) *apm.Transaction {
 	sampled := (span.Flags & 1) == 1
 	tags := tagsToMap(span.Tags)
 	statusCode, _ := strconv.Atoi(tags["http.status_code"])
@@ -68,6 +78,7 @@ func toAPM(span *jaeger.Span) *apm.Transaction {
 				},
 				Method: tags["http.method"],
 			},
+			Service: serviceToAPM(proc),
 			Response: &apm.Response{
 				StatusCode: statusCode,
 			},
@@ -96,7 +107,7 @@ func (i *Importer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, span := range spans.Spans {
-		if err := i.exporter.SendToAPM(toAPM(span)); err != nil {
+		if err := i.exporter.SendToAPM(toAPM(spans.Process, span)); err != nil {
 			log.Println(err)
 		}
 	}

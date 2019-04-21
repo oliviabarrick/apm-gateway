@@ -1,6 +1,8 @@
 package apm
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	"time"
 	"bytes"
 	apm "go.elastic.co/apm/model"
 	"go.elastic.co/fastjson"
@@ -8,11 +10,26 @@ import (
 	"net/http"
 )
 
-const (
-	apmUrl = "http://172.17.0.5:8200/intake/v2/events"
+var (
+	exportSeconds = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name:       "apm_export_seconds",
+			Help:       "Seconds exporting traces to APM.",
+		},
+		[]string{"service", "status"},
+	)
+
+	exportErrors = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name:       "apm_export_errors",
+			Help:       "Errors observed exporting traces to APM.",
+		},
+		[]string{"service"},
+	)
 )
 
 type Exporter struct {
+	Url string
 	client *http.Client
 }
 
@@ -42,6 +59,26 @@ func (e *Exporter) SendToAPM(transaction *apm.Transaction) error {
 
 	log.Println(string(buf.Bytes()))
 
-	_, err := e.client.Post(apmUrl, "application/x-ndjson", buf)
+	startTime := time.Now()
+
+	resp, err := e.client.Post(e.Url, "application/x-ndjson", buf)
+
+	service := transaction.Context.Service.Name
+	exportSeconds.WithLabelValues(service, resp.Status).Observe(float64(time.Now().Sub(startTime).Nanoseconds()))
+
+	if err != nil {
+		exportErrors.WithLabelValues(service).Inc()
+		return err
+	}
+
+	if err := resp.Body.Close(); err != nil {
+		return err
+	}
+
 	return err
+}
+
+func init() {
+	prometheus.MustRegister(exportSeconds)
+	prometheus.MustRegister(exportErrors)
 }

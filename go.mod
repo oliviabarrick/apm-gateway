@@ -9,7 +9,7 @@ require (
 	github.com/jaegertracing/jaeger v1.11.0
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/openzipkin/zipkin-go v0.1.6
-	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829 // indirect
+	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	github.com/stretchr/testify v1.2.2
 	github.com/uber-go/atomic v1.3.2 // indirect
 	github.com/uber/jaeger-client-go v2.16.0+incompatible

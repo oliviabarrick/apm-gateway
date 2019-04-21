@@ -64,7 +64,7 @@ func TestJaeger(t *testing.T) {
 		assert.Nil(t, err)
 
 		for _, span := range spans.Spans {
-			s := toAPM(span)
+			s := toAPM(spans.Process, span)
 			tags := tagsToMap(span.Tags)
 			sampled := true
 			assert.Equal(t, s.ID, apmutil.SpanId(uint64(span.SpanId)))
@@ -79,6 +79,7 @@ func TestJaeger(t *testing.T) {
 				Key:    "User-Agent",
 				Values: []string{tags["http.user_agent"]},
 			})
+			assert.Equal(t, s.Context.Service, serviceToAPM(spans.Process))
 			assert.Equal(t, s.Context.Response.StatusCode, 200)
 			assert.ElementsMatch(t, s.Context.Tags, apmutil.TagsToAPM(tags))
 			assert.Equal(t, s.Sampled, &sampled)
@@ -120,5 +121,14 @@ func TestTagsToMap(t *testing.T) {
 	assert.Equal(t, tagsToMap(tags), map[string]string{
 		"http.host":   "example.com:8080",
 		"http.status": "200",
+	})
+}
+
+func TestJaegerServiceToAPM(t *testing.T) {
+	assert.Nil(t, serviceToAPM(nil))
+	assert.Equal(t, serviceToAPM(&jaegermodel.Process{
+		ServiceName: "hello",
+	}), &apmmodel.Service{
+		Name: "hello",
 	})
 }
