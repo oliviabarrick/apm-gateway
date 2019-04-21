@@ -3,15 +3,15 @@ package jaeger
 import (
 	"fmt"
 	"github.com/apache/thrift/lib/go/thrift"
-	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
 	"github.com/jaegertracing/jaeger/thrift-gen/jaeger"
+	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
 	apm "go.elastic.co/apm/model"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 	"strconv"
+	"time"
 )
 
 func tagsToMap(jaegerTags []*jaeger.Tag) map[string]string {
@@ -43,14 +43,14 @@ func toAPM(span *jaeger.Span) *apm.Transaction {
 	statusCode, _ := strconv.Atoi(tags["http.status_code"])
 
 	return &apm.Transaction{
-		ID: apmutil.SpanId(uint64(span.SpanId)),
-		TraceID: apmutil.TraceId(uint64(span.TraceIdHigh), uint64(span.TraceIdLow)),
-		ParentID: apmutil.SpanId(uint64(span.ParentSpanId)),
-		Name: span.OperationName,
+		ID:        apmutil.SpanId(uint64(span.SpanId)),
+		TraceID:   apmutil.TraceId(uint64(span.TraceIdHigh), uint64(span.TraceIdLow)),
+		ParentID:  apmutil.SpanId(uint64(span.ParentSpanId)),
+		Name:      span.OperationName,
 		Timestamp: apm.Time(time.Unix(0, span.StartTime)),
-		Duration: float64(span.Duration),
-		Type:    "request",
-		Result:  tags["http.status_code"],
+		Duration:  float64(span.Duration),
+		Type:      "request",
+		Result:    tags["http.status_code"],
 		SpanCount: apm.SpanCount{
 			Dropped: 0,
 			Started: 0,
@@ -58,7 +58,7 @@ func toAPM(span *jaeger.Span) *apm.Transaction {
 		Context: &apm.Context{
 			Tags: apmutil.TagsToAPM(tags),
 			Request: &apm.Request{
-				URL:    apmutil.TagsToURL(tags),
+				URL: apmutil.TagsToURL(tags),
 				Headers: []apm.Header{
 					{
 						Key:    "User-Agent",

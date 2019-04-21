@@ -1,10 +1,10 @@
 package apm
 
 import (
-	"net/url"
-	"testing"
 	"github.com/stretchr/testify/assert"
 	apmmodel "go.elastic.co/apm/model"
+	"net/url"
+	"testing"
 )
 
 func TestTagsToAPM(t *testing.T) {

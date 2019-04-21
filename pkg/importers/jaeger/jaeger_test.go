@@ -2,11 +2,10 @@ package jaeger
 
 import (
 	"fmt"
+	jaegermodel "github.com/jaegertracing/jaeger/thrift-gen/jaeger"
 	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
 	"github.com/stretchr/testify/assert"
 	apmmodel "go.elastic.co/apm/model"
-	jaegermodel "github.com/jaegertracing/jaeger/thrift-gen/jaeger"
-	"time"
 	"go.opencensus.io/exporter/jaeger"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/trace"
@@ -14,6 +13,7 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
+	"time"
 )
 
 type mockJaeger struct {
@@ -107,19 +107,18 @@ func TestTagsToMap(t *testing.T) {
 	status := int64(200)
 
 	tags = append(tags, &jaegermodel.Tag{
-		Key: "http.host",
+		Key:  "http.host",
 		VStr: &host,
 	})
 
 	tags = append(tags, &jaegermodel.Tag{
 		VType: jaegermodel.TagType_LONG,
-		Key: "http.status",
+		Key:   "http.status",
 		VLong: &status,
 	})
 
-
 	assert.Equal(t, tagsToMap(tags), map[string]string{
-		"http.host": "example.com:8080",
+		"http.host":   "example.com:8080",
 		"http.status": "200",
 	})
 }

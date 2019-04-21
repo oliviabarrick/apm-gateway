@@ -1,14 +1,14 @@
 package apm
 
 import (
-	"strings"
-	"encoding/binary"
 	"bytes"
+	"encoding/binary"
 	apm "go.elastic.co/apm/model"
 	"go.elastic.co/fastjson"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 const (

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/justinbarrick/apm-gateway/pkg/importers/zipkin"
 	"github.com/justinbarrick/apm-gateway/pkg/importers/jaeger"
+	"github.com/justinbarrick/apm-gateway/pkg/importers/zipkin"
 	"log"
 	"net/http"
 )
@@ -16,5 +16,5 @@ func main() {
 		log.Fatal(http.ListenAndServe(":14268", http.HandlerFunc(jaeger.Handler)))
 	}()
 
-	select{}
+	select {}
 }
