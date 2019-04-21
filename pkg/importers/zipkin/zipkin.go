@@ -1,6 +1,7 @@
 package zipkin
 
 import (
+	"io"
 	"strconv"
 	"encoding/binary"
 	"encoding/json"
@@ -14,6 +15,23 @@ import (
 	apmutil "github.com/justinbarrick/apm-gateway/pkg/apm"
 )
 
+func idToAPM(zipkinID zipkin.ID) apm.SpanID {
+	zipkinByteSlice := make([]byte, 8)
+	zipkinBytes := [8]byte{}
+
+	binary.BigEndian.PutUint64(zipkinByteSlice, uint64(zipkinID))
+	copy(zipkinBytes[:], zipkinByteSlice)
+
+	return apm.SpanID(zipkinBytes)
+}
+
+func parentToAPM(zipkinParent *zipkin.ID) (parentId apm.SpanID) {
+	if zipkinParent != nil {
+		parentId = idToAPM(*zipkinParent)
+	}
+	return 
+}
+
 func traceIdToAPM(zipkinTraceID zipkin.TraceID) apm.TraceID {
 	zipkinByteSlice := make([]byte, 8)
 	zipkinBytes := [16]byte{}
@@ -25,16 +43,6 @@ func traceIdToAPM(zipkinTraceID zipkin.TraceID) apm.TraceID {
 	copy(zipkinBytes[8:], zipkinByteSlice)
 
 	return apm.TraceID(zipkinBytes)
-}
-
-func idToAPM(zipkinID zipkin.ID) apm.SpanID {
-	zipkinByteSlice := make([]byte, 8)
-	zipkinBytes := [8]byte{}
-
-	binary.BigEndian.PutUint64(zipkinByteSlice, uint64(zipkinID))
-	copy(zipkinBytes[:], zipkinByteSlice)
-
-	return apm.SpanID(zipkinBytes)
 }
 
 func tagsToAPM(zipkinTags map[string]string) (tags apm.StringMap) {
@@ -58,8 +66,12 @@ func clientToAPM(zipkinEndpoint *zipkin.Endpoint) *apm.RequestSocket {
 		addr = fmt.Sprintf("[%s]", zipkinEndpoint.IPv6.String())
 	}
 
+	if zipkinEndpoint.Port != 0 {
+		addr = fmt.Sprintf("%s:%d", addr, zipkinEndpoint.Port)
+	}
+
 	return &apm.RequestSocket{
-		RemoteAddress: fmt.Sprintf("%s:%d", addr, zipkinEndpoint.Port),
+		RemoteAddress: addr,
 	}
 }
 
@@ -71,13 +83,6 @@ func serviceToAPM(zipkinEndpoint *zipkin.Endpoint) *apm.Service {
 	return &apm.Service{
 		Name: zipkinEndpoint.ServiceName,
 	}
-}
-
-func parentToAPM(zipkinParent *zipkin.ID) (parentId apm.SpanID) {
-	if zipkinParent != nil {
-		parentId = idToAPM(*zipkinParent)
-	}
-	return 
 }
 
 func urlToURL(zipkinTags map[string]string) url.URL {
@@ -126,10 +131,13 @@ func toAPM(zipkinSpan zipkin.SpanModel) *apm.Transaction {
 	}
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
-	spans := []zipkin.SpanModel{}
+func decodeZipkin(body io.Reader) (spans []zipkin.SpanModel, err error) {
+	return spans, json.NewDecoder(body).Decode(&spans)
+}
 
-	if err := json.NewDecoder(r.Body).Decode(&spans); err != nil {
+func Handler(w http.ResponseWriter, r *http.Request) {
+	spans, err := decodeZipkin(r.Body)
+	if err != nil {
 		log.Println(err)
 	}
 
