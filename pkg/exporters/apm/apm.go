@@ -1,35 +1,35 @@
 package apm
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"time"
 	"bytes"
+	"github.com/prometheus/client_golang/prometheus"
 	apm "go.elastic.co/apm/model"
 	"go.elastic.co/fastjson"
 	"log"
 	"net/http"
+	"time"
 )
 
 var (
 	exportSeconds = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Name:       "apm_export_seconds",
-			Help:       "Seconds exporting traces to APM.",
+			Name: "apm_export_seconds",
+			Help: "Seconds exporting traces to APM.",
 		},
 		[]string{"service", "status"},
 	)
 
 	exportErrors = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name:       "apm_export_errors",
-			Help:       "Errors observed exporting traces to APM.",
+			Name: "apm_export_errors",
+			Help: "Errors observed exporting traces to APM.",
 		},
 		[]string{"service"},
 	)
 )
 
 type Exporter struct {
-	Url string
+	Url    string
 	client *http.Client
 }
 

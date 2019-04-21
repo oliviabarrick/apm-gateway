@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/justinbarrick/apm-gateway/pkg/exporters/apm"
 	"github.com/justinbarrick/apm-gateway/pkg/importers"
 	"github.com/justinbarrick/apm-gateway/pkg/importers/jaeger"
 	"github.com/justinbarrick/apm-gateway/pkg/importers/zipkin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
